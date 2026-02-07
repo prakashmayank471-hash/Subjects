@@ -1,0 +1,221 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subjects Checkbox</title>  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+
+    .container {
+      background: white;
+      padding: 20px 30px 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      width: 340px;
+      animation: fadeIn 1s ease;
+      margin-bottom: 40px;
+    }
+
+    h1 { text-align: center; margin-bottom: 15px; color: #333; }
+
+    /* ===== JARS ===== */
+    .jars { display: flex; justify-content: space-around; margin-bottom: 15px; position: relative; }
+
+    .jar {
+      width: 70px; height: 110px;
+      border: 3px solid #555;
+      border-radius: 12px 12px 18px 18px;
+      position: relative; overflow: hidden; background: #eee;
+    }
+
+    .water {
+      position: absolute; bottom: 0; width: 100%;
+      height: 80%; background: gold;
+      transition: height 0.5s ease;
+    }
+
+    .water.empty { height: 0%; }
+
+    .jar-label { text-align: center; font-size: 12px; margin-top: 4px; font-weight: bold; }
+
+    /* pouring stream */
+    .stream {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      width: 6px;
+      height: 0;
+      background: gold;
+      transform: translateX(-50%);
+      border-radius: 3px;
+      opacity: 0;
+    }
+
+    .pouring {
+      animation: pour 0.6s ease;
+    }
+
+    @keyframes pour {
+      0% { height: 0; opacity: 0; }
+      30% { height: 60px; opacity: 1; }
+      100% { height: 0; opacity: 0; }
+    }
+
+    /* fireworks */
+    .firework {
+      position: fixed;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: yellow;
+      pointer-events: none;
+      animation: explode 800ms ease-out forwards;
+    }
+
+    @keyframes explode {
+      to { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
+    }
+
+    /* ===== SUBJECTS ===== */
+    .subject {
+      position: relative; display: flex; align-items: center;
+      margin: 10px 0; padding: 10px 12px;
+      border-radius: 12px; transition: 0.3s ease;
+      cursor: pointer; overflow: hidden;
+    }
+
+    .subject:hover { background: #f0f4ff; }
+
+    input[type="checkbox"] { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; }
+
+    .checked { background: #d4edda !important; color: #155724; font-weight: bold; animation: pop 0.35s ease; }
+
+    .particle {
+      position: absolute; width: 6px; height: 6px; background: #28a745;
+      border-radius: 50%; pointer-events: none;
+      animation: sprinkle 700ms ease-out forwards;
+    }
+
+    @keyframes sprinkle { to { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; } }
+    @keyframes pop { 0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+
+    .count { margin-top: 15px; text-align: center; font-weight: bold; }
+  </style></head>
+<body>  <div class="container">
+    <h1>Select Subjects</h1><div class="jars">
+  <div>
+    <div class="jar"><div class="water" id="jar8"></div></div>
+    <div class="jar-label">8th</div>
+  </div>
+
+  <div class="stream" id="stream"></div>
+
+  <div>
+    <div class="jar"><div class="water empty" id="jar9"></div></div>
+    <div class="jar-label">9th</div>
+  </div>
+</div>
+
+<label class="subject"><input type="checkbox" />Maths</label>
+<label class="subject"><input type="checkbox" />Physics</label>
+<label class="subject"><input type="checkbox" />Chemistry</label>
+<label class="subject"><input type="checkbox" />Biology</label>
+<label class="subject"><input type="checkbox" />Geography</label>
+<label class="subject"><input type="checkbox" />English</label>
+<label class="subject"><input type="checkbox" />Hindi</label>
+<label class="subject"><input type="checkbox" />MSC</label>
+<label class="subject"><input type="checkbox" />History</label>
+<label class="subject"><input type="checkbox" />Sanskrit</label>
+
+<div class="count">Selected: 0</div>
+
+  </div>  <audio id="tickSound" preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_9b1c1a1c6f.mp3" type="audio/mpeg">
+  </audio>  <script>
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const countText = document.querySelector('.count');
+    const sound = document.getElementById('tickSound');
+    const jar8 = document.getElementById('jar8');
+    const jar9 = document.getElementById('jar9');
+    const stream = document.getElementById('stream');
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const label = cb.parentElement;
+
+        if (cb.checked) {
+          label.classList.add('checked');
+          sound.currentTime = 0; sound.play();
+          createSprinkles(label);
+          animatePour();
+        } else {
+          label.classList.remove('checked');
+        }
+
+        const totalChecked = document.querySelectorAll('input[type="checkbox"]:checked').length;
+        countText.textContent = `Selected: ${totalChecked}`;
+        updateJars(totalChecked);
+      });
+    });
+
+    function updateJars(count) {
+      const max = checkboxes.length;
+      const percent = count / max;
+
+      jar8.style.height = (80 - percent * 80) + "%";
+      jar9.style.height = (percent * 80) + "%";
+
+      if (percent === 1) createFireworks();
+    }
+
+    function animatePour() {
+      stream.classList.remove('pouring');
+      void stream.offsetWidth;
+      stream.classList.add('pouring');
+    }
+
+    function createSprinkles(container) {
+      for (let i = 0; i < 12; i++) {
+        const p = document.createElement('span');
+        p.className = 'particle';
+
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = 40 + Math.random() * 20;
+
+        p.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+        p.style.setProperty('--y', Math.sin(angle) * distance + 'px');
+
+        p.style.left = '50%'; p.style.top = '50%';
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 700);
+      }
+    }
+
+    function createFireworks() {
+      for (let i = 0; i < 40; i++) {
+        const f = document.createElement('div');
+        f.className = 'firework';
+
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = 80 + Math.random() * 60;
+
+        f.style.left = '50%';
+        f.style.top = '120px';
+        f.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+        f.style.setProperty('--y', Math.sin(angle) * distance + 'px');
+
+        document.body.appendChild(f);
+        setTimeout(() => f.remove(), 800);
+      }
+    }
+  </script></body>
+</html>
